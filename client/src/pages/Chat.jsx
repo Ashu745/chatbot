@@ -17,12 +17,14 @@ const Chat = () => {
   const deletedChatId = useRef(null);
   const chatContainerRef = useRef(null);
   const navigate = useNavigate();
+  const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   const saveChatToBackend = async (summary, fullChat, chatId = null) => {
     if (chatId && deletedChatId.current === chatId) return;
     const token = localStorage.getItem("token");
     try {
-      await fetch("http://localhost:5000/api/chat/history", {
+      await fetch(`${BASE_URL}/api/chat/history`, {
+
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -38,7 +40,8 @@ const Chat = () => {
   const deleteChat = async (chatId) => {
     const token = localStorage.getItem("token");
     try {
-      await fetch(`http://localhost:5000/api/chat/history/${chatId}`, {
+      await fetch(`${BASE_URL}/api/chat/history/${chatId}`, {
+
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -57,43 +60,44 @@ const Chat = () => {
   };
 
   const handleSend = async () => {
-  if (!input.trim()) return;
-  const token = localStorage.getItem("token");
+    if (!input.trim()) return;
+    const token = localStorage.getItem("token");
 
-  try {
-    
-    const nlpResponse = await fetch("http://localhost:5001/api/nlp", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text: input }),
-    });
+    try {
 
-    const nlpData = await nlpResponse.json();
-    console.log("NLP response:", nlpData); 
+      const nlpResponse = await fetch(`${BASE_URL.replace(":5000", ":5001")}/api/nlp`, {
 
-    const productResults = nlpData.results || [];
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: input }),
+      });
 
-    if (!productResults.length) {
-      setMessages((prev) => [
-        ...prev.filter((m) => !m.isGreeting),
-        { text: input, sender: "user" },
-        { text: "Sorry, no matching product found.", sender: "bot" },
-      ]);
-      setInput("");
-      return;
-    }
+      const nlpData = await nlpResponse.json();
+      console.log("NLP response:", nlpData);
 
-    if (!firstValidProduct && productResults[0]?.product_name) {
-      setFirstValidProduct(productResults[0].product_name);
-    }
+      const productResults = nlpData.results || [];
 
-    const cardBg = darkMode ? "bg-gray-700" : "bg-white";
-    const textColor = darkMode ? "text-white" : "text-black";
-    const containerBg = darkMode ? "bg-gray-800" : "bg-gray-100";
+      if (!productResults.length) {
+        setMessages((prev) => [
+          ...prev.filter((m) => !m.isGreeting),
+          { text: input, sender: "user" },
+          { text: "Sorry, no matching product found.", sender: "bot" },
+        ]);
+        setInput("");
+        return;
+      }
 
-    const formatted = `
+      if (!firstValidProduct && productResults[0]?.product_name) {
+        setFirstValidProduct(productResults[0].product_name);
+      }
+
+      const cardBg = darkMode ? "bg-gray-700" : "bg-white";
+      const textColor = darkMode ? "text-white" : "text-black";
+      const containerBg = darkMode ? "bg-gray-800" : "bg-gray-100";
+
+      const formatted = `
       <div class="w-full flex flex-wrap justify-evenly gap-3 ${containerBg} ${textColor} p-2 rounded-lg shadow my-2 text-sm leading-tight">
         ${productResults
           .map(
@@ -111,64 +115,64 @@ const Chat = () => {
       </div>
     `;
 
-    const cheapest = productResults.reduce((a, b) => (a.price < b.price ? a : b));
-    const discountedPrice = Math.round(
-      cheapest.price - (cheapest.price * (cheapest.discount || 0)) / 100
-    );
-    const bestDealMessage = `
+      const cheapest = productResults.reduce((a, b) => (a.price < b.price ? a : b));
+      const discountedPrice = Math.round(
+        cheapest.price - (cheapest.price * (cheapest.discount || 0)) / 100
+      );
+      const bestDealMessage = `
       <div class="p-2 mt-2 rounded bg-green-100 border border-green-400 text-xs text-green-800 leading-tight">
         ✅ <strong>Best Deal:</strong> ${cheapest.product_name} at <strong>₹${discountedPrice}</strong> on <strong>${cheapest.store} (incl Discount)</strong>.<br/>
         ${cheapest.offers?.description ? `💳 <em>${cheapest.offers.description}</em>` : ""}
       </div>
     `;
 
-    setMessages((prev) => [
-      ...prev.filter((m) => !m.isGreeting), // ⛔ remove greeting if present
-      { text: input, sender: "user" },
-      { text: formatted, sender: "bot", isHtml: true },
-      { text: bestDealMessage, sender: "bot", isHtml: true },
-    ]);
-  } catch (error) {
-    console.error("Compare error:", error.message);
-    setMessages((prev) => [
-      ...prev.filter((m) => !m.isGreeting), // ⛔ remove greeting if present
-      { text: input, sender: "user" },
-      { text: "Sorry, something went wrong.", sender: "bot" },
-    ]);
-  }
+      setMessages((prev) => [
+        ...prev.filter((m) => !m.isGreeting), // ⛔ remove greeting if present
+        { text: input, sender: "user" },
+        { text: formatted, sender: "bot", isHtml: true },
+        { text: bestDealMessage, sender: "bot", isHtml: true },
+      ]);
+    } catch (error) {
+      console.error("Compare error:", error.message);
+      setMessages((prev) => [
+        ...prev.filter((m) => !m.isGreeting), // ⛔ remove greeting if present
+        { text: input, sender: "user" },
+        { text: "Sorry, something went wrong.", sender: "bot" },
+      ]);
+    }
 
-  setInput("");
-};
+    setInput("");
+  };
 
 
 
 
 
   const handleNewChat = async () => {
-  if (messages.length > 0 && firstValidProduct) {
-    const summary = `Comparing ${firstValidProduct}`;
-    const newId = Date.now();
-    const updated = [
-      { id: newId, summary, fullChat: messages },
-      ...chatHistory.filter((chat) => chat.id !== activeChatId),
+    if (messages.length > 0 && firstValidProduct) {
+      const summary = `Comparing ${firstValidProduct}`;
+      const newId = Date.now();
+      const updated = [
+        { id: newId, summary, fullChat: messages },
+        ...chatHistory.filter((chat) => chat.id !== activeChatId),
+      ];
+      setChatHistory(updated);
+      await saveChatToBackend(summary, messages, activeChatId || newId);
+    }
+
+    const greetings = [
+      "Hi there! 👋 What would you like to compare today?",
+      "Welcome! 🚀 Type a product name to get started.",
+      "Hey! 😊 Let’s find you the best deal.",
+      "Hello! 🛍️ What product are you looking for?",
+      "Ready to compare prices? 🔍 Type your product below!"
     ];
-    setChatHistory(updated);
-    await saveChatToBackend(summary, messages, activeChatId || newId);
-  }
+    const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
 
-  const greetings = [
-    "Hi there! 👋 What would you like to compare today?",
-    "Welcome! 🚀 Type a product name to get started.",
-    "Hey! 😊 Let’s find you the best deal.",
-    "Hello! 🛍️ What product are you looking for?",
-    "Ready to compare prices? 🔍 Type your product below!"
-  ];
-  const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
-
-  setMessages([{ text: randomGreeting, sender: "bot", isGreeting: true }]);
-  setFirstValidProduct(null);
-  setActiveChatId(null);
-};
+    setMessages([{ text: randomGreeting, sender: "bot", isGreeting: true }]);
+    setFirstValidProduct(null);
+    setActiveChatId(null);
+  };
 
 
   const handleLogout = () => {
@@ -176,22 +180,22 @@ const Chat = () => {
     setChatHistory([]);
     navigate("/");
   };
-  const fetchRecommendation = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  // const fetchRecommendation = async () => {
+  //   const token = localStorage.getItem("token");
+  //   if (!token) return;
 
-    try {
-      const response = await fetch("http://localhost:5000/api/chat/recommendation", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (response.ok && data.recommendation) {
-        setRecommendation(data.recommendation);
-      }
-    } catch (error) {
-      console.error("Error fetching recommendation:", error);
-    }
-  };
+  //   try {
+  //     const response = await fetch("http://localhost:5000/api/chat/recommendation", {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     const data = await response.json();
+  //     if (response.ok && data.recommendation) {
+  //       setRecommendation(data.recommendation);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching recommendation:", error);
+  //   }
+  // };
 
   const loadChatFromHistory = async (chat) => {
     if (
@@ -227,7 +231,8 @@ const Chat = () => {
       if (!token) return;
 
       try {
-        const response = await fetch("http://localhost:5000/api/chat/history", {
+        const response = await fetch(`${BASE_URL}/api/chat/history`, {
+
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
