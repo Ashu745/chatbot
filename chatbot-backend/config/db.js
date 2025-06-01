@@ -1,19 +1,16 @@
 const mongoose = require('mongoose');
 
-// MongoDB connection string (update db name here)
-const mongoURI = 'mongodb://localhost:27017/chatbot'; // Use your actual DB name
+// ✅ Updated: MongoDB connection string with specific DB name (e.g., chatbotdb)
+const mongoURI = 'mongodb+srv://asirbad865:OGflfXyiD2u55UaZ@chatbot.ercidyc.mongodb.net/chatbotdb?retryWrites=true&w=majority&appName=Chatbot';
 
-// Create a function to connect to MongoDB
+// MongoDB connection function
 const connectDB = async () => {
   try {
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoURI);
     console.log('✅ MongoDB connected successfully');
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err.message);
-    process.exit(1); // Exit process if DB fails
+    process.exit(1);
   }
 };
 
