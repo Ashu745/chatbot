@@ -49,6 +49,7 @@ const Signup = () => {
         setError(data.message || "Signup failed. Please try again."); // Set error if signup fails
       }
     } catch (error) {
+      console.error("Signup/Login error:", err.message);
       setError("An error occurred. Please try again."); // Set error if there's a network issue
     }
     setLoading(false); // Set loading to false after the signup attempt
