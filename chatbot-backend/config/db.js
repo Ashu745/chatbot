@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // ✅ Updated: MongoDB connection string with specific DB name (e.g., chatbotdb)
-const mongoURI = 'mongodb+srv://asirbad865:OGflfXyiD2u55UaZ@chatbot.ercidyc.mongodb.net/chatbotdb?retryWrites=true&w=majority&appName=Chatbot';
+const mongoURI = process.env.MONGO_URI;
 
 // MongoDB connection function
 const connectDB = async () => {
